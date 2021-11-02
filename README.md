@@ -1,7 +1,13 @@
 # Сниппеты Битрикс d7
+  
+  ***
 
+ 1. [Get site ID SITE_ID](#Get-site-ID-SITE_ID)
  2. [Сайт URL](#URL)
+ 3. [Выборка разделов инфоблока](#Выборка-разделов-инфоблока)
 
+  
+  ***
 ## Get site ID SITE_ID
 
 
@@ -17,7 +23,8 @@ if($siteId) {
 }
 ```
 
-## URL
+## URL   
+
 
 ```php
 <?php
