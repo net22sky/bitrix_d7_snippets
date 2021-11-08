@@ -7,6 +7,9 @@
  3. [Выборка разделов инфоблока](#Выборка-разделов-инфоблока)
  4. [Работа с изображением](#Работа-с-изображением)
  5. [Работа с элементом как с объектом](Работа-с-элементом-как-с-объектом)
+ 6. [Свойство инфоблока типа Список](Свойство-инфоблока-типа-Список)
+ 7. [Данные текущего пользователя](Данные-текущего-пользователя)
+ 8. [Свойства элемента](Свойства-элемента)
   
   ***
 ### подключить модуль iblock:
@@ -253,3 +256,161 @@ $elements = \Bitrix\Iblock\Elements\ElementCatalogTable::getList([
 ])->fetchCollection();
 ```
 
+### Свойство инфоблока типа Список
+```php
+<?php
+// Выбрать все варианты значений свойства типа Список с идентификатором 10
+$rsEnum = \Bitrix\Iblock\PropertyEnumerationTable::getList([
+	'filter' => ['PROPERTY_ID' => 10],
+	'select' => ['ID'],
+	'cache' =>  ['ttl', 2678400],
+]);
+while($arEnum = $rsEnum->fetch())
+{
+  print_r($arEnum);
+}
+
+
+```
+
+### Данные текущего пользователя
+
+```php
+<?php
+// ID текущего авторизованного пользователя
+$userId = \Bitrix\Main\Engine\CurrentUser::get()->getId();
+// авторизован ли пользователь
+$isAuth = (bool)\Bitrix\Main\Engine\CurrentUser::get()->getId();
+// админ?
+$isAdmin = \Bitrix\Main\Engine\CurrentUser::get()->isAdmin();
+// логин текущего пользователя
+$login = \Bitrix\Main\Engine\CurrentUser::get()->getLogin();
+// массив групп текущего пользователя
+$arUserGroups = \Bitrix\Main\Engine\CurrentUser::get()->getUserGroups();
+// имя, фамилию и пр. текущего пользователя, отформатированное в соответствии с настройками
+$userName = \Bitrix\Main\Engine\CurrentUser::get()->getFormattedName();
+// полное имя текущего пользователя
+$fullUserName = \Bitrix\Main\Engine\CurrentUser::get()->getFullName();
+// имя текущего пользователя
+$userName = \Bitrix\Main\Engine\CurrentUser::get()->getName();
+// фамилию текущего пользователя
+$lastName = \Bitrix\Main\Engine\CurrentUser::get()->getLastName();
+// отчество текущего пользователя
+$secondName = \Bitrix\Main\Engine\CurrentUser::get()->getSecondName();
+// может ли текущий пользователь выполнить операцию с кодом операции в переменной $operationName
+$canDoOperation = \Bitrix\Main\Engine\CurrentUser::get()->canDoOperation($operationName);
+
+
+```
+### Свойства элемента
+
+```php
+<?php
+// Свойства элементов (когда мы работаем с ними в виде объекта) получаются при помощи геттеров 
+// (методов getXXXX где XXXX — код свойства записанный как CamelCase). 
+// У каждого свойства есть поле значения VALUE и описания DESCRIPTION 
+// и соответcтвующие методы для доступа к ним getValue() и getDescription().
+
+$product = \Bitrix\Iblock\Elements\ElementProductsTable::getByPrimary(10, [ //10 - ID товара
+    'select' => ['ID', 'NAME', 'PREVIEW_TEXT', 'DETAIL_PICTURE', 'MANUFACTURER', 'MATERIAL'], //MANUFACTURER и MATERIAL свойства типа «Строка»
+])->fetchObject();
+
+// свойства типа Текст или Число
+$product->getManufacturer()->getValue();
+
+// Получить значения коллекции множественного свойства типа Справочник
+$elements = \Bitrix\Iblock\Elements\ElementCatalogTable::getList([
+    'select' => ['ID', 'NAME', 'DETAIL_PICTURE', 'BRAND_REF'],
+    'filter' => [
+        'ID' => $elementId,
+    ],
+])->fetchCollection();
+foreach ($elements as $element) {
+    foreach ($element->getBrandRef()->getAll() as $value) {
+        var_dump($value->getValue()); // string(6) "brand1"
+    }
+}
+
+// Чтобы получить дополнительную информацию для некоторых типов свойств,
+// нужно указать дополнительный ключ при выборке свойства:
+// FILE — свойство типа файл
+// ITEM — свойство типа список,
+// ELEMENT — свойство типа привязка к элементу инфоблока
+// SECTION — свойство типа привязка к разделу инфоблока
+// Например, у элемента есть следующие свойства типов:
+// MORE_PHOTO — Картинки галереи (тип файл)
+// NEWPRODUCT — Новинка (тип список)
+// RECOMMEND — С этим товаром рекомендуем (тип привязка к элементу)
+// NEWS_SECTION — Показывать в рекламном блоке в новостях (тип привязка к разделу)
+$product = \Bitrix\Iblock\Elements\ElementProductsTable::getByPrimary(10, [
+    'select' => [
+        'ID',
+        'NAME',
+        'PREVIEW_TEXT',
+        'DETAIL_PICTURE',
+        'MORE_PHOTO.FILE',
+        'NEWPRODUCT.ITEM',
+        'RECOMMEND.ELEMENT',
+        'NEWS_SECTION.SECTION'
+    ],
+])->fetchObject();
+
+// Свойство типа файл
+//Выведем доп.фотографии товара
+foreach ($product->getMorePhoto()->getAll() as $photo){
+    echo '<img src="/upload/' . $photo->getFile()->getSubdir() . '/' . $photo->getFile()->getFileName() . '" alt="'. $product->getName() .'" />';
+}
+
+// Свойство типа список
+$product->getNewproduct()->getItem()->getId();
+//int(1)
+$product->getNewproduct()->getItem()->getXmlId();
+//string(1) "Y"
+$product->getNewproduct()->getItem()->getValue();
+//string(4) "да"
+
+// Свойство типа привязка к элементам инфоблока
+//Получим привязанные элементы
+foreach ($product->getRecommend()->getAll() as $recommendedProduct){
+    echo 'Рекомендуемый товар ID -' . $recommendedProduct->getElement()->getId() . ' наименование - ' . $recommendedProduct->getElement()->getName() . '<br/>';
+}
+
+// Свойство типа привязка к разделу инфоблока
+//Получим id привязанного раздела
+$product->getNewsSection()->getSection()->getId();
+//Получим наименование привязанного раздела
+$product->getNewsSection()->getSection()->getName();
+
+```
+
+### Работа с базой данных
+
+```php
+<?php
+// Получить соединение с основной базой данных
+$connection = \Bitrix\Main\Application::getConnection();
+
+// Подключение к дополнительной базе данных
+$connection = \Bitrix\Main\Application::getConnection(DB_NAME);
+$result = $connection->query('SELECT * FROM table_name ORDER BY id DESC');
+
+// dropTable
+if ($connection->isTableExists(TABLE_NAME))
+	$connection->dropTable(TABLE_NAME);
+
+// create table
+$sql = 'CREATE TABLE IF NOT EXISTS `'.TABLE_NAME.'` ('.implode(',', $arColumns).');';
+$connection->queryExecute($sql);
+
+// Запрос без получения результата
+$sql = "INSERT INTO ".TABLE_NAME."(".$insert[0].") "."VALUES (".$insert[1].")";
+$connection->queryExecute($sql);
+
+// Подготовка строки для использования в sql-запросе (максимальная длина - 50 символов)
+$sqlHelper = $connection->getSqlHelper();
+$string = $sqlHelper->forSql($string, 50);
+
+// Скалярный запрос (возвращает не набор данных, а конкретное значение)
+$count = $connection->queryScalar("SELECT COUNT(ID) FROM table_name");
+
+```
