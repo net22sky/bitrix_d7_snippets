@@ -6,10 +6,15 @@
  2. [Сайт URL](#URL)
  3. [Выборка разделов инфоблока](#Выборка-разделов-инфоблока)
  4. [Работа с изображением](#Работа-с-изображением)
+ 5. [Работа с элементом как с объектом](Работа-с-элементом-как-с-объектом)
   
   ***
-## Get site ID SITE_ID
+### подключить модуль iblock:
+```php
+\Bitrix\Main\Loader::includeModule('iblock');
 
+```
+## Get site ID SITE_ID
 
 ```php
 <?php
@@ -229,3 +234,22 @@ $arFileTmp = CFile::ResizeImageGet(
 	true
 );
 echo $arFileTmp["src"];
+```
+### Работа с элементом как с объектом
+#### для одного элемента:
+```php
+$element = \Bitrix\Iblock\Elements\ElementCatalogTable::getByPrimary($elementId, array(
+    'select' => array('ID', 'NAME', 'DETAIL_PICTURE')
+))->fetchObject();
+
+```
+#### для нескольких элементов:
+```php
+$elements = \Bitrix\Iblock\Elements\ElementCatalogTable::getList([
+    'select' => ['ID', 'NAME', 'DETAIL_PICTURE'],
+    'filter' => [
+        'ID' => $elementId,
+    ],
+])->fetchCollection();
+```
+
