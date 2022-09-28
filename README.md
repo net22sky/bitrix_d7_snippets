@@ -17,6 +17,70 @@
 \Bitrix\Main\Loader::includeModule('iblock');
 
 ```
+
+### CIBlockElement::GetById()
+
+```php
+<?php
+\Bitrix\Main\Loader::includeModule('iblock');
+
+//Имя ORM класса для работы с инфоблоком
+$classEntity = \Bitrix\Iblock\Iblock::wakeUp(IBLOCK_CATALOG_ID)->getEntityDataClass(); //Где IBLOCK_CATALOG_ID - ID инфоблока
+// $classEntity == \Bitrix\Iblock\Elements\ElementProductsTable
+
+/**
+ * Для работы с элементами инфоблока средствами ORM, 
+ * необходимо использовать класс \Bitrix\Iblock\Elements\Element_Символьный_код_API_инфоблока_Table
+ * в нашем случае \Bitrix\Iblock\Elements\ElementProductsTable
+ */
+$product = \Bitrix\Iblock\Elements\ElementProductsTable::getByPrimary(10, [ //10 - ID товара
+    'select' => ['ID', 'NAME', 'PREVIEW_TEXT', 'DETAIL_PICTURE', 'MANUFACTURER', 'MATERIAL'],
+])->fetch();
+
+// В переменной $product будет примерно такая информация:
+/*
+Array
+(
+    [ID] => 10
+    [NAME] => Платье Красная Фея
+    [PREVIEW_TEXT] => 
+    [DETAIL_PICTURE] => 68
+    [IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MANUFACTURER_ID] => 2148
+    [IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MANUFACTURER_IBLOCK_ELEMENT_ID] => 10
+    [IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MANUFACTURER_IBLOCK_PROPERTY_ID] => 10
+    [IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MANUFACTURER_VALUE] => Россия "Модница"
+    [IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MATERIAL_ID] => 2156
+    [IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MATERIAL_IBLOCK_ELEMENT_ID] => 10
+    [IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MATERIAL_IBLOCK_PROPERTY_ID] => 11
+    [IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MATERIAL_VALUE] => трикотаж
+)
+*/
+
+// Чтобы избежать таких длинных ключей как IBLOCK_ELEMENTS_ELEMENT_PRODUCTS_MANUFACTURER_IBLOCK_ELEMENT_ID 
+// в результирующем массиве, можно использовать псевдонимы, вот так:
+$product = \Bitrix\Iblock\Elements\ElementProductsTable::getByPrimary(10, [ //10 - ID товара
+    'select' => ['ID', 'NAME', 'PREVIEW_TEXT', 'DETAIL_PICTURE', 'MANUFACTURER_' => 'MANUFACTURER', 'MATERIAL_'=>'MATERIAL'],
+])->fetch();
+
+/*
+Содержимое переменной: Array
+(
+    [ID] => 10
+    [NAME] => Платье Красная Фея
+    [PREVIEW_TEXT] => 
+    [DETAIL_PICTURE] => 68
+    [MANUFACTURER_ID] => 2148
+    [MANUFACTURER_IBLOCK_ELEMENT_ID] => 10
+    [MANUFACTURER_IBLOCK_PROPERTY_ID] => 10
+    [MANUFACTURER_VALUE] => Россия "Модница"
+    [MATERIAL_ID] => 2156
+    [MATERIAL_IBLOCK_ELEMENT_ID] => 10
+    [MATERIAL_IBLOCK_PROPERTY_ID] => 11
+    [MATERIAL_VALUE] => трикотаж
+)
+*/
+```
+
 ## Get site ID SITE_ID
 
 ```php
@@ -413,4 +477,46 @@ $string = $sqlHelper->forSql($string, 50);
 // Скалярный запрос (возвращает не набор данных, а конкретное значение)
 $count = $connection->queryScalar("SELECT COUNT(ID) FROM table_name");
 
+```
+### Методы класса Result
+```php
+<?php
+// Result - абстрактный класс для представления данных, полученных в ходе запроса.
+
+// Элемент инфоблока как объект
+// В данном случае, в $product будет получен объект класса Bitrix\Iblock\Elements\EO_ElementProducts
+$product = \Bitrix\Iblock\Elements\ElementProductsTable::getByPrimary(10, [ //10 - ID товара
+    'select' => ['ID', 'NAME', 'PREVIEW_TEXT', 'DETAIL_PICTURE', 'MANUFACTURER_' => 'MANUFACTURER', 'MATERIAL_'=>'MATERIAL'],
+])->fetchObject();
+
+// Для получения значений элемента инфоблока используются геттеры 
+// (методы getXXXX где XXX — название поля в «верблюжьей нотации» или CamelCase).
+//Получить id товара
+echo $product->getId(); //10
+
+//Получить наименование товара
+echo $product->getName(); //"Платье Красная Фея"
+
+//Получить id детального изображения
+echo $product->getDetailPicture(); //68
+
+// Существует так же общий метод get() который принимает наименование поля, значение которого вам нужно получить
+//Получим id элемента
+echo $product->Get('ID'); // 10
+
+//Получим наименование элемента
+echo $product->Get('NAME'); // "Платье Красная фея"
+```
+
+### CUser::GetList
+
+```php
+<?
+$dbUser = \Bitrix\Main\UserTable::getList([
+	'select' => ['ID', 'NAME', 'PERSONAL_PHOTO', 'PERSONAL_WWW'],
+	'filter' => ['ID' => $USER->GetID()]
+]);
+if ($arUser = $dbUser->fetch()){
+	
+}
 ```
