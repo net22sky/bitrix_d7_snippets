@@ -6,6 +6,8 @@
  3. [SELECT с подзапросом](#SELECT-с-подзапросом)
  4. [WHERE с подзапросом](#WHERE-с-подзапросом)
  5. [Джоин не пустой таблицы без дублей.](#Джоин-не-пустой-таблицы-без-дублей.)
+ 6. [Кеширование запросов в orm Битрикс](#Кеширование-запросов-в-orm-Битрикс)
+
 
   
   ***
@@ -210,5 +212,22 @@ $query
     ->setGroup([
         'ID',
     ]);
+
+```
+
+ ## Кеширование запросов в orm Битрикс ##
+
+
+```php
+$obItems = \Bitrix\Iblock\Elements\ElementCatalogTable::query()
+	->setFilter(['ACTIVE' => 'Y','NEW.ITEM.VALUE' => 'Да'])
+	->setSelect(['ID', 'IBLOCK_ID', 'NAME', 'ACTIVE', 'SORT', 'NEW.ITEM'])
+	->setCacheTtl(3600) // Включает кеш
+	->cacheJoins(true) // Т.к. в запросе есть еще и таблица со свойствами, то включаем кеш с JOIN
+	->fetchCollection();
+foreach ($obItems as $obItem) {
+	$arItem = $obItem->collectValues();
+	$arItem['NEW'] = $arItem['NEW']->getItem()->collectValues();
+}
 
 ```
